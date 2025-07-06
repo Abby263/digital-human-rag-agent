@@ -126,10 +126,22 @@ poetry install
 Download the required pre-trained models for SadTalker:
 
 ```bash
+# Option 1: Use the simplified download script (recommended)
+./download_models.sh
+
+# Option 2: Manual download
 cd SadTalker
 bash scripts/download_models.sh
+# Download additional required models
+wget -nc https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2/epoch_20.pth -O ./checkpoints/epoch_20.pth
+wget -nc https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2/auido2exp_00300-model.pth -O ./checkpoints/auido2exp_00300-model.pth
+wget -nc https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2/auido2pose_00140-model.pth -O ./checkpoints/auido2pose_00140-model.pth
+wget -nc https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2/facevid2vid_00189-model.pth.tar -O ./checkpoints/facevid2vid_00189-model.pth.tar
+wget -nc https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2/shape_predictor_68_face_landmarks.dat -O ./checkpoints/shape_predictor_68_face_landmarks.dat
 cd ..
 ```
+
+**Note:** The model files are large (several GB total) and may take some time to download depending on your internet connection.
 
 #### Ollama LLM
 
