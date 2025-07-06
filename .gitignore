@@ -3,10 +3,8 @@
 venv/
 env/
 __pycache__/
-*.pyc
+*.py[cod]
 *.egg-info/
-pip-log.txt
-pip-delete-this-directory.txt
 
 # --- Build & Distribution ---
 build/
@@ -23,32 +21,39 @@ dist/
 .DS_Store
 Thumbs.db
 
-# --- Project-specific ---
-# Logs
+# --- Logs & Cache ---
 *.log
-
-# Cache
 .cache/
 .pytest_cache/
 
-# Generated output files
-/output/*
-!/output/.gitkeep
+# --- Generated Output ---
+/output/
 /static/results/
 /static/test_results/
 /static/temp.mp3
 /static/audio.wav
+*.mp4
+*.wav
 
-# SadTalker submodule's generated content and models
-/SadTalker/results/
-/SadTalker/checkpoints/
-/SadTalker/gfpgan/
-/SadTalker/full_description.txt
-/SadTalker/face_alignment.py
+# --- Large File Formats ---
+*.pth
+*.pth.tar
+*.safetensors
+*.dat
+*.mat
+*.gif
+*.zip
 
-# Ignore everything in the SadTalker submodule directory by default
-# But explicitly un-ignore files that should be tracked
+# --- Explicit Directories to Ignore ---
+/checkpoints/
+/gfpgan/
+
+# --- SadTalker Submodule ---
+# Ignore everything in the SadTalker directory first
 /SadTalker/*
+
+# Then, explicitly UN-ignore the files we NEED to track.
+# This ensures no large files from the submodule are accidentally included.
 !/SadTalker/src/
 !/SadTalker/scripts/
 !/SadTalker/docs/
@@ -60,5 +65,11 @@ Thumbs.db
 !/SadTalker/LICENSE
 !/SadTalker/requirements.txt
 !/SadTalker/requirements3d.txt
-!/SadTalker/.gitmodules
 !/SadTalker/.gitignore
+!/SadTalker/cog.yaml
+!/SadTalker/launcher.py
+!/SadTalker/predict.py
+!/SadTalker/quick_demo.ipynb
+!/SadTalker/req.txt
+!/SadTalker/webui.bat
+!/SadTalker/webui.sh
