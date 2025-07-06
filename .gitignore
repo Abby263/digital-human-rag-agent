@@ -16,15 +16,24 @@ dist/
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
 
 # --- OS-specific ---
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # --- Logs & Cache ---
 *.log
 .cache/
 .pytest_cache/
+.coverage
+htmlcov/
 
 # --- Generated Output ---
 /output/
@@ -43,6 +52,16 @@ Thumbs.db
 *.mat
 *.gif
 *.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tiff
+*.webp
 
 # --- Explicit Directories to Ignore ---
 /checkpoints/
@@ -73,3 +92,85 @@ Thumbs.db
 !/SadTalker/req.txt
 !/SadTalker/webui.bat
 !/SadTalker/webui.sh
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Output directories
+output/
+outputs/
+results/
+generated/
+temp/
+tmp/
+*.mp4
+*.avi
+*.mov
+*.mp3
+*.flac
+*.ogg
+
+# Specific model weights
+weights/
+models/
+pretrained/
+trained/
+saved_models/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+logs/
+log/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+config.json
+secrets.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+
+# Poetry
+poetry.lock
