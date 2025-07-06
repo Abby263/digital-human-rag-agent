@@ -73,15 +73,6 @@ This will download approximately 7.6GB of model files:
 - Text-to-speech models
 - Supporting checkpoint files
 
-### 4. Environment Configuration
-
-Create a `.env` file in the root directory with your API keys:
-
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-HUGGINGFACE_TOKEN=your_huggingface_token_here
-```
-
 ## Usage
 
 ### Using the Web Interface
