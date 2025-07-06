@@ -130,4 +130,99 @@ The video creation process is a sequence of four main stages, orchestrated by `s
     5.  **Enhancement (Optional)**: If enabled, `GFPGAN` is used to restore and enhance the facial details in each frame, improving overall visual quality.
     6.  The frames are compiled into a final MP4 video and saved to `output/videos/generated_video.mp4`.
 
-This detailed, multi-stage process ensures that each component is optimized for its specific task, resulting in a high-quality, AI-generated digital human video. 
+This detailed, multi-stage process ensures that each component is optimized for its specific task, resulting in a high-quality, AI-generated digital human video.
+
+### Detailed End-to-End Workflow
+
+The Digital Human RAG Agent generates video through a sophisticated, multi-stage pipeline. It is designed to first understand the static identity of the person in the source image and then animate it using the audio. This decoupling of identity from motion is the key to producing high-quality, identity-preserving results.
+
+```mermaid
+graph TD
+    subgraph "Stage 1: Identity Extraction"
+        A[Source Image] --> B{3D Face Reconstruction};
+        B -- "epoch_20.pth, BFM" --> C[3DMM Identity Coefficients];
+    end
+
+    subgraph "Stage 2: Audio-Driven Motion Generation"
+        D[Driving Audio] --> E{Audio-to-Expression};
+        D --> F{Audio-to-Pose};
+        E -- "auido2exp_*.pth" --> G[Expression Coefficients];
+        F -- "auido2pose_*.pth" --> H[Pose Coefficients];
+        C --> I{Combine Coefficients};
+        G --> I;
+        H --> I;
+        I --> J[Full Animation Coefficients];
+    end
+
+    subgraph "Stage 3: Video Rendering"
+        J --> K{3D-Aware Face Renderer};
+        A --> K;
+        K -- "facevid2vid_*.tar, SadTalker_*.safetensors" --> L[Raw Video Frames];
+    end
+
+    subgraph "Stage 4: AI Enhancement (Optional)"
+        L --> M{GFPGAN Face Restoration};
+        M -- "GFPGANv1.4.pth" --> N[Enhanced Video Frames];
+    end
+
+    subgraph "Final Output"
+      N --> O[Final MP4 Video];
+      D --> O;
+    end
+```
+
+#### Stage 1: Identity Extraction (3D Face Reconstruction)
+
+The first step is to create a digital representation of the person's face from the source image. This establishes the unique "identity" that will be animated.
+
+*   **Input**: A single source image (`source_image.png`).
+*   **Core Model**: `epoch_20.pth` (a ResNet-50 network from Microsoft's **Deep3DFaceReconstruction** project).
+*   **Supporting Models**: `BFM_model_front.mat` (The Basel Face Model provides a generic 3D face template), `shape_predictor_68_face_landmarks.dat` (dlib's facial landmark detector).
+*   **Process**:
+    1.  The system crops the input image and uses dlib to detect 68 key facial landmarks (corners of eyes, nose, mouth, etc.).
+    2.  The `epoch_20.pth` model takes the cropped image and analyzes its geometry and texture. Through a process called "weakly-supervised learning," it fits the Basel Face Model to the image, generating a set of **3D Morphable Model (3DMM) coefficients**.
+    3.  These coefficients are a compact vector of numbers that define the face's intrinsic properties:
+        *   **Identity (`id_coeff`)**: The fundamental 3D shape of the face.
+        *   **Texture (`tex_coeff`)**: The color and detail of the skin (albedo).
+    4.  The output of this stage is a `.mat` file containing these static coefficients, which serve as the unchanging foundation for the animation.
+
+#### Stage 2: Audio-Driven Motion Generation
+
+This stage generates the dynamic facial movements and head poses directly from the audio file.
+
+*   **Input**: The driving audio file (`driven_audio.wav`) and the static identity coefficients from Stage 1.
+*   **Core Models**:
+    *   `auido2exp_00300-model.pth` (**ExpNet**): A dedicated network that translates audio signals into expressive facial muscle movements.
+    *   `auido2pose_00140-model.pth` (**PoseVAE**): A Variational Autoencoder that synthesizes natural, stylized head movements from the audio.
+*   **Process**:
+    1.  The audio waveform is processed by two networks simultaneously.
+    2.  **ExpNet** focuses on the mouth and eye regions, generating a time-series of expression coefficients that dictate lip shape for each sound (phoneme) and add natural eye blinks.
+    3.  **PoseVAE** analyzes the rhythm and prosody of the speech to generate a corresponding sequence of head poses (rotation and translation).
+    4.  The resulting dynamic expression and pose coefficients are synchronized and combined with the static identity coefficients. This produces a final, comprehensive set of animation coefficients for the entire duration of the audio.
+
+#### Stage 3: 3D-Aware Video Rendering
+
+With the complete animation data prepared, this stage renders the final video frames.
+
+*   **Input**: The full set of animation coefficients and the cropped source image.
+*   **Core Models**: `SadTalker_V0.0.2_512.safetensors` and `facevid2vid_00189-model.pth.tar`. These models work together as the main face animation engine.
+*   **Process**:
+    1.  The rendering module (`AnimateFromCoeff`) iterates through the animation coefficients, one set for each frame of the output video.
+    2.  In each frame, it constructs a 3D face mesh using the identity, expression, and pose coefficients for that specific moment in time.
+    3.  It then projects the 2D texture from the original, cropped source image onto this 3D mesh, effectively "skinning" the model.
+    4.  This process generates a raw video frame, which is stored in memory. This is repeated until all coefficients have been processed.
+
+#### Stage 4: AI-Powered Enhancement (Optional)
+
+This final, optional step uses a separate AI model to improve the realism of the generated frames.
+
+*   **Input**: The raw video frames from Stage 3.
+*   **Core Model**: `GFPGANv1.4.pth` (**Generative Facial Prior GAN**).
+*   **Process**:
+    1.  GFPGAN is a state-of-the-art "blind face restoration" model. It excels at taking low-quality or artificial-looking faces and making them photorealistic.
+    2.  Each raw frame is passed through GFPGAN. The model enhances details like eye reflections, skin pores, and hair texture, while correcting any subtle color or lighting inconsistencies.
+    3.  This significantly boosts the perceptual quality of the final output.
+
+#### Final Output
+
+The processed (and optionally enhanced) frames are encoded into an MP4 video file, and the original driving audio is added as the soundtrack, resulting in the final, synchronized talking head video. 
