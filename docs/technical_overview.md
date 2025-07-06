@@ -1,109 +1,133 @@
-# Technical Overview: Digital Human Generator
+# Technical Overview: Digital Human RAG Agent
 
-This document provides a detailed technical explanation of the Digital Human Generator application, from initial user input to the final generated video.
+This document provides a detailed technical explanation of the Digital Human RAG Agent, covering the system architecture, AI pipeline, and the specific models required for each stage of the generation process.
 
 ## System Architecture
 
-The application is built on a modular, asynchronous pipeline using FastAPI for the web server and a series of specialized AI models for each stage of the generation process. The backend is designed to be run locally and is optimized for different hardware, including Apple Silicon (MPS) and NVIDIA GPUs (CUDA).
+The application is built on a modular pipeline that orchestrates several specialized AI models to create a final video product. The backend is designed to be run locally and is optimized for different hardware configurations, including Apple Silicon (MPS), NVIDIA GPUs (CUDA), and CPU-only setups.
 
 ```mermaid
 graph TD
-    subgraph Frontend
-        A[HTML/CSS/JS Interface]
+    subgraph User Interface
+        A[Web Interface (HTML/CSS/JS)]
     end
 
-    subgraph Backend (FastAPI)
-        B[Web Server: main.py]
-        C[SSE Endpoint: /generate]
+    subgraph Backend Server (Python/Flask)
+        B[Web Server: src/main.py]
     end
 
-    subgraph AI Pipeline
-        D[LLM: llm.py]
-        E[Image Gen: image_generator.py]
-        F[Audio Gen: audio_generator.py]
-        G[Video Gen: video_generator.py]
+    subgraph AI Pipeline Stages
+        D[1. LLM Prompt Generation<br>(src/llm.py)]
+        E[2. Image Generation<br>(src/image_generator.py)]
+        F[3. Audio Generation<br>(src/audio_generator.py)]
+        G[4. Video Generation<br>(src/video_generator.py)]
     end
 
-    subgraph Models
-        H[Ollama: gemma:2b]
-        I[Hugging Face: Stable Diffusion]
-        J[gTTS: Google Text-to-Speech]
-        K[SadTalker & GFPGAN]
+    subgraph Core Models
+        H[LLM (Ollama/Gemma)]
+        I[Image Model (Stable Diffusion)]
+        J[TTS Model (gTTS)]
+        K[Video Models (SadTalker & GFPGAN)]
     end
     
-    A -- HTTP Request --> B
-    B -- Calls --> C
-    C -- Streams Progress --> A
+    A -- HTTP Request (Character, Script) --> B
+    B -- Invokes --> D
+    B -- Invokes --> E
+    B -- Invokes --> F
+    B -- Invokes --> G
     
-    C -- Invokes --> D
     D -- Uses --> H
-    D -- Returns Prompt --> C
-    
-    C -- Invokes --> E
     E -- Uses --> I
-    E -- Returns Image --> C
-    
-    C -- Invokes --> F
     F -- Uses --> J
-    F -- Returns Audio --> C
-    
-    C -- Invokes --> G
     G -- Uses --> K
-    G -- Returns Video --> C
+
+    subgraph Outputs
+        O1[Detailed Image Prompt]
+        O2[Source Image (.png)]
+        O3[Voiceover Audio (.wav)]
+        O4[Final Video (.mp4)]
+    end
+
+    D --> O1
+    E --> O2
+    F --> O3
+    G --> O4
 ```
+
+## Required Models & Files (7.6 GB Total)
+
+The application relies on a collection of pre-trained models that must be downloaded before use. These files are not included in the git repository due to their large size. The `download_models.sh` script automates the download process.
+
+### 1. SadTalker Models (~4.1 GB)
+
+These models are the core of the video generation stage, responsible for animating the static source image.
+
+| File                                | Size   | Purpose                                                                                             |
+| ----------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
+| `facevid2vid_00189-model.pth.tar`   | 2.0 GB | The main model for generating video frames by animating facial landmarks.                           |
+| `SadTalker_V0.0.2_512.safetensors`  | 704 MB | The primary SadTalker model weights for generating 512x512 resolution videos.                       |
+| `SadTalker_V0.0.2_256.safetensors`  | 705 MB | Alternative model weights for generating 256x256 resolution videos (faster, lower quality).        |
+| `epoch_20.pth`                      | 288 MB | A foundational training checkpoint required by the core animation model.                            |
+| `mapping_00229-model.pth.tar`       | 148 MB | A 3D mapping model used for deconstructing the face into a controllable mesh.                     |
+| `mapping_00109-model.pth.tar`       | 160 MB | An alternative 3D mapping model.                                                                    |
+| `shape_predictor_68_face_landmarks.dat` | 97 MB  | A Dlib model for detecting 68 specific facial landmarks (eyes, nose, mouth) in the source image. |
+| `auido2pose_00140-model.pth`        | 91 MB  | A deep learning model that predicts head pose and movement from the input audio.                    |
+| `auido2exp_00300-model.pth`         | 33 MB  | A model that predicts facial expressions (like blinks) from the audio to create natural movement. |
+
+### 2. GFPGAN Models (~739 MB)
+
+GFPGAN (Generative Facial Prior) is used as an optional final step in the video rendering pipeline to enhance the quality of the generated faces.
+
+| File                      | Size   | Purpose                                                                        |
+| ------------------------- | ------ | ------------------------------------------------------------------------------ |
+| `GFPGANv1.4.pth`          | 333 MB | The main weights for the GFPGAN face restoration model.                        |
+| `detection_Resnet50_Final.pth` | 255 MB | A ResNet50 model used for detecting faces within the video frames.             |
+| `parsing_parsenet.pth`    | 4.4 MB | A model used for parsing facial components (eyes, mouth) to apply enhancements. |
+| `alignment_WFLW_4HG.pth`  | 146 MB | A model for aligning facial features before enhancement.                       |
+
+### 3. Other Required Models (~1.7 GB)
+
+These models are used in the initial stages of the pipeline for image and audio generation.
+
+-   **Stable Diffusion (`stabilityai/stable-diffusion-2-1-base`)**:
+    -   **Size**: ~1.7 GB
+    -   **Purpose**: This is the core image generation model. It takes a detailed text prompt and generates the initial 512x512 character avatar. The model is downloaded automatically by the Hugging Face `diffusers` library on first use and cached locally.
+-   **Google Text-to-Speech (gTTS)**:
+    -   **Size**: N/A (API-based, but runs locally)
+    -   **Purpose**: Converts the input text script into a spoken voiceover. It does not require a separate model download but relies on the `gTTS` library.
 
 ## Step-by-Step Generation Flow
 
-The video creation process is a sequence of four main stages, orchestrated by the `generate_video` function in `src/main.py` and streamed to the user via Server-Sent Events (SSE).
+The video creation process is a sequence of four main stages, orchestrated by `src/main.py`.
 
-### 1. Stage 1: Prompt Generation
+### 1. Stage 1: LLM Prompt Generation
 
--   **Trigger**: The user submits the character description and script via the web form.
--   **File**: `src/llm.py`
--   **Model**: `Ollama gemma:2b`
--   **Process**:
-    1.  The `LLMFactory` takes the user's brief character description (e.g., "A confident CEO").
-    2.  It uses a `langchain` prompt template (`prompts/image_prompt.txt`) to construct a detailed query for the LLM.
-    3.  Crucially, it injects specific instructions to generate a prompt for a **passport-style, front-facing headshot**, which is the ideal input for the video generation stage.
-    4.  The `gemma:2b` model processes this and returns a detailed, single-sentence prompt suitable for Stable Diffusion (e.g., "A photorealistic, 4k, passport-style photograph of a confident female CEO...").
+-   **Files**: `src/llm.py`, `prompts/image_prompt.txt`
+-   **Model**: Ollama `gemma:2b` (or other local LLM)
+-   **Process**: The user's brief character description (e.g., "A confident CEO") is expanded by the LLM into a detailed, descriptive prompt suitable for Stable Diffusion. The prompt template instructs the LLM to request a **passport-style, front-facing headshot**, which is the ideal input format for SadTalker.
 
 ### 2. Stage 2: Avatar Image Creation
 
--   **Trigger**: The detailed image prompt from Stage 1 is received.
 -   **File**: `src/image_generator.py`
 -   **Model**: `stabilityai/stable-diffusion-2-1-base`
--   **Process**:
-    1.  The `generate_avatar_image` function initializes the `DiffusionPipeline` from Hugging Face.
-    2.  **Hardware Optimization**: It detects the available hardware (MPS, CUDA, or CPU) and configures the pipeline accordingly.
-        -   On **Apple Silicon (MPS)**, it uses `torch.float32` and other specific workarounds to prevent common "black image" or `NaN` errors, ensuring stable GPU-accelerated performance.
-        -   If MPS fails, it automatically **falls back to CPU** to ensure the generation completes.
-    3.  The Stable Diffusion model generates a 512x512 image based on the prompt.
-    4.  The final image is saved to `output/images/source_image.png`.
+-   **Process**: The `DiffusionPipeline` from Hugging Face uses the detailed prompt to generate a 512x512 image. The system is optimized for MPS (Apple Silicon), CUDA (NVIDIA), and has a CPU fallback to ensure compatibility. The final image is saved to `output/images/source_image.png`.
 
 ### 3. Stage 3: Voiceover Synthesis
 
--   **Trigger**: The avatar image is successfully generated.
 -   **File**: `src/audio_generator.py`
--   **Model**: `gTTS` (Google Text-to-Speech)
--   **Process**:
-    1.  The user's original script is passed to the `generate_voiceover` function.
-    2.  `gTTS` converts the text into an MP3 audio file in memory.
-    3.  `ffmpeg` is used to convert the MP3 into a **16000 Hz mono WAV file**, which is the required format for the lip-sync model.
-    4.  The final audio is saved to `output/audio/audio.wav`.
+-   **Model**: `gTTS`
+-   **Process**: The user's script is converted into an MP3 audio file by `gTTS`. This is then post-processed using `ffmpeg` into a **16000 Hz mono WAV file**, which is the required input format for SadTalker's audio-to-pose model. The final audio is saved to `output/audio/audio.wav`.
 
 ### 4. Stage 4: Lip-Synced Video Rendering
 
--   **Trigger**: Both the image and audio files are ready.
 -   **File**: `src/video_generator.py`
--   **Model**: `SadTalker`
+-   **Models**: SadTalker, GFPGAN
 -   **Process**:
-    1.  The `create_ai_influencer_video` function calls the `SadTalker/inference.py` script as a subprocess.
-    2.  It passes the **absolute paths** to the generated image and audio files.
-    3.  SadTalker's deep learning model analyzes the audio to predict facial muscle movements (lip sync, blinking, and head motion).
-    4.  It deconstructs the source image into 3D facial landmarks and then animates these landmarks frame by frame to match the predicted movements.
-    5.  The `GFPGAN` enhancer is used to improve the quality of the animated face in each frame.
-    6.  The frames are stitched together into a final MP4 video.
-    7.  The video is initially saved in `output/temp_results` and then moved to `output/videos/generated_video.mp4`.
-    8.  The application serves this final file to the user.
+    1.  The `SadTalker/inference.py` script is called as a subprocess with the paths to the generated image and audio.
+    2.  **Facial Landmark Detection**: SadTalker first uses the `shape_predictor_68_face_landmarks.dat` model to identify key points on the face.
+    3.  **Audio-to-Motion**: The `auido2pose` and `auido2exp` models analyze the audio waveform to predict realistic head movements and expressions (blinking).
+    4.  **Animation**: The core `facevid2vid` model uses this motion data to animate the static source image frame by frame.
+    5.  **Enhancement (Optional)**: If enabled, `GFPGAN` is used to restore and enhance the facial details in each frame, improving overall visual quality.
+    6.  The frames are compiled into a final MP4 video and saved to `output/videos/generated_video.mp4`.
 
 This detailed, multi-stage process ensures that each component is optimized for its specific task, resulting in a high-quality, AI-generated digital human video. 
