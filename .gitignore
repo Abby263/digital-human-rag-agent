@@ -1,25 +1,64 @@
-# Python virtual environment
+# --- Python ---
 .venv/
 venv/
 env/
-
-# Cache and compiled files
 __pycache__/
 *.pyc
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Build & Distribution ---
+build/
+dist/
+*.spec
+*.manifest
+
+# --- IDE & Editor ---
+.idea/
+.vscode/
+*.swp
+
+# --- OS-specific ---
+.DS_Store
+Thumbs.db
+
+# --- Project-specific ---
+# Logs
+*.log
+
+# Cache
 .cache/
 .pytest_cache/
 
-# Generated output
-/output/
+# Generated output files
+/output/*
+!/output/.gitkeep
+/static/results/
+/static/test_results/
+/static/temp.mp3
+/static/audio.wav
 
-# SadTalker generated files and models
+# SadTalker submodule's generated content and models
 /SadTalker/results/
 /SadTalker/checkpoints/
-/SadTalker/gfpgan/weights/
-/SadTalker/gfpgan/experiments/
+/SadTalker/gfpgan/
+/SadTalker/full_description.txt
+/SadTalker/face_alignment.py
 
-# macOS files
-.DS_Store
-
-# Log files
-*.log
+# Ignore everything in the SadTalker submodule directory by default
+# But explicitly un-ignore files that should be tracked
+/SadTalker/*
+!/SadTalker/src/
+!/SadTalker/scripts/
+!/SadTalker/docs/
+!/SadTalker/examples/
+!/SadTalker/inference.py
+!/SadTalker/app_sadtalker.py
+!/SadTalker/webui.py
+!/SadTalker/README.md
+!/SadTalker/LICENSE
+!/SadTalker/requirements.txt
+!/SadTalker/requirements3d.txt
+!/SadTalker/.gitmodules
+!/SadTalker/.gitignore

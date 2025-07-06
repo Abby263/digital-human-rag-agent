@@ -51,8 +51,9 @@ def create_ai_influencer_video(image_path: Path, audio_path: Path) -> Path:
     for f in glob.glob(str(config.RESULT_DIR / '*.mp4')):
         os.remove(f)
 
-    # Use the direct Python executable from Poetry's virtual environment
-    python_executable = config.ROOT_DIR / '.venv' / 'bin' / 'python'
+    # Use the current Python executable
+    import sys
+    python_executable = sys.executable
     
     command = [
         str(python_executable), str(config.SADTALKER_INFERENCE_SCRIPT),
