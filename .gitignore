@@ -1,0 +1,25 @@
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Cache and compiled files
+__pycache__/
+*.pyc
+.cache/
+.pytest_cache/
+
+# Generated output
+/output/
+
+# SadTalker generated files and models
+/SadTalker/results/
+/SadTalker/checkpoints/
+/SadTalker/gfpgan/weights/
+/SadTalker/gfpgan/experiments/
+
+# macOS files
+.DS_Store
+
+# Log files
+*.log

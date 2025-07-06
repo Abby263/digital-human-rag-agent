@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Human Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Digital Human Generator</h1>
+            <p>Create a realistic AI-powered avatar from text</p>
+        </header>
+
+        <main class="main-content">
+            <form id="generation-form">
+                <div class="form-group">
+                    <label for="characterstics">1. Describe Your Character</label>
+                    <input type="text" id="characterstics" name="characterstics" placeholder="e.g., A confident female CEO, mid-40s, sharp suit" required>
+                </div>
+                <div class="form-group">
+                    <label for="script">2. Write Their Script</label>
+                    <textarea id="script" name="script" rows="5" placeholder="e.g., Welcome to our quarterly earnings call. We have exceeded all expectations." required></textarea>
+                </div>
+                <button type="submit" id="generate-btn">Generate Video</button>
+            </form>
+
+            <div id="progress-container" class="hidden">
+                <h2>Generation Progress</h2>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                    <span id="progress-percentage">0%</span>
+                </div>
+                <div id="progress-stages">
+                    <div class="stage" id="stage-prompt">
+                        <span class="stage-icon"></span>
+                        <p>Generating Prompt</p>
+                    </div>
+                    <div class="stage" id="stage-image">
+                        <span class="stage-icon"></span>
+                        <p>Creating Avatar</p>
+                    </div>
+                    <div class="stage" id="stage-audio">
+                        <span class="stage-icon"></span>
+                        <p>Synthesizing Voice</p>
+                    </div>
+                    <div class="stage" id="stage-video">
+                        <span class="stage-icon"></span>
+                        <p>Rendering Video</p>
+                    </div>
+                </div>
+                <p id="progress-message"></p>
+            </div>
+
+            <div id="result-container" class="hidden">
+                <h2>Generated Video</h2>
+                <video id="result-video" controls></video>
+                <div class="result-footer">
+                    <a id="download-link" href="#" download="generated_video.mp4">Download Video</a>
+                    <button id="reset-btn-success" class="reset-btn">Create Another Video</button>
+                </div>
+                <p id="generation-time" class="hidden"></p>
+            </div>
+
+            <div id="error-container" class="hidden">
+                <h2>An Error Occurred</h2>
+                <p id="error-message"></p>
+                <button id="reset-btn-error" class="reset-btn">Try Again</button>
+            </div>
+        </main>
+    </div>
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+    <script src="/static/main.js"></script>
+</body>
+</html> 
