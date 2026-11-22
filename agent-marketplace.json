@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "digital-human-rag-agent",
+  "repository": "Abby263/digital-human-rag-agent",
+  "catalog": "candidate",
+  "availability": "request_integration",
+  "name": "Digital Human Agent",
+  "category": "Customer operations",
+  "description": "Create an avatar-led experience from an approved script.",
+  "request": "Approved script and permitted avatar inputs.",
+  "response": "An artifact or render job status.",
+  "integration": {
+    "operation": "Queue a synthetic avatar presentation.",
+    "readiness": "Verify the render service and asset rights before enabling a client adapter."
+  }
+}
